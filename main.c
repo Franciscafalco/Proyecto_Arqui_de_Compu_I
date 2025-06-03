@@ -23,9 +23,9 @@ void delay(volatile uint32_t ticks);
 int main(void)
 {
     /* 1. Autenticación  */
-    bool verificador = false;
+    char verificador = false;
     char lector_password[MAX_PASSWORD + 1];
-    const char password[MAX_PASSWORD + 1] = "daleB";
+    const char password[MAX_PASSWORD + 1] = "daleR";
     int cant_intentos = 0;
 
     do
@@ -45,11 +45,11 @@ int main(void)
 
         if (verificador)
         {
-            puts("\nBienvenido al sistema\n");
+            printf("\nBienvenido al sistema\n");
         }
         else
         {
-            puts("Password no valida\n");
+            printf("Password no valida\n");
             ++cant_intentos;
         }
     } while (cant_intentos < 3 && !verificador);
@@ -154,7 +154,7 @@ void disp_binary(uint8_t v)
 {
     /* Imprime los 8 bits MSB→LSB */
     for (int b = 7; b >= 0; --b)
-        putchar((v & (1u << b)) ? '1' : '0');
+        putchar((v & (1u << b)) ? '*' : '_');
     putchar('\n');
 }
 
