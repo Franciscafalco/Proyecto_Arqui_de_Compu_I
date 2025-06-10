@@ -3,16 +3,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <ncurses.h>
+#include <stdlib.h>
+
+
 //#include "EasyPIO.h"          <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
 
 #define MAX_PASSWORD 5
 #define RETARDO_DEF 0x1500
 
-//void init_hw(void);           <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
+
 void mostrar_menu(void);
 void ejecutar_opcion(int op);
 
 /* secuencias */
+void ejecutar_secuencia(int secuencia);
 void secuencia_auto_fantastico(void);
 void secuencia_choque(void);
 void secuencia_prop_alg(void);
@@ -21,10 +26,17 @@ void secuencia_tabla(void);
 /* utilitarios */
 void disp_binary(uint8_t value);
 void delay(volatile uint32_t ticks);
-int leer_password(char *buffer, int max_len);
+int leer_password(char *buffer, size_t max_len);
 
 int main(void)
 {
+    //pioInit();
+
+    initscr();            // arranca ncurses
+    cbreak();             // un solo carácter a la vez
+    noecho();             // no “eco” de teclas
+    nodelay(stdscr, TRUE);// getch() no bloquea
+
     /* 1. Autenticación  */
     char verificador = false;
     char lector_password[MAX_PASSWORD + 1];
@@ -69,10 +81,13 @@ int main(void)
         return 0;
     }
 
-    /* 2. Inicialización de hardware */
-    //init_hw();                    <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
+        // volvemos a reactivar cbreak/noecho/nodelay
+    cbreak();
+    noecho();
+    nodelay(stdscr, TRUE);
 
-    /* ─── 3. Menú principal ─── */
+
+    /* ─── 2. Menú principal ─── */
     int opcion;
     do
     {
@@ -89,13 +104,15 @@ int main(void)
     } while (opcion != 0);
 
     puts("\nPrograma finalizado.");
+
+    nodelay(stdscr, FALSE);
+    echo();
+    nocbreak();
+    endwin();
+
+
     return 0;
 }
-
-/*void init_hw(void){
-    pioInit();                           <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
-    pinsMode((int*)led_pins, 8, OUTPUT); 
-}*/
 
 /* MENÚ  */
 void mostrar_menu(void)
@@ -140,59 +157,89 @@ void ejecutar_opcion(int op)
 /* SECUENCIAS DE LUCES */
 void secuencia_auto_fantastico(void)
 {
-    for(int i = 0 ; i < 8; ++i){
-        uint8_t val = 1u << i;
-        disp_binary(val);
-        delay(RETARDO_DEF);
-    }
+     int ch;
+    while (1) {
+        for(int i = 0 ; i < 8; ++i){
+            if ((ch = getch()) != ERR){
+                disp_binary(0x00); //apaga
+                //leds(0x00); // Descomentar cuando se use en la Raspberry
+                return; // sale de la secuencia
+            }
+            disp_binary (1u << i);
+            delay(300);
+            //leds(1u << i);                         <---- Descomentar cuando se use en la Raspberry
+            //delayMillis(300);
+        }
 
-    for (int i = 6; i > 0; --i){
-        uint8_t val = 1u << i;
-        disp_binary(val);
-        delay(RETARDO_DEF);
+        for (int i = 6; i > 0; --i){
+            if ((ch = getch()) != ERR){
+                disp_binary(0x00); //apaga
+                //leds(0x00); // Descomentar cuando se use en la Raspberry
+                return; // sale de la secuencia
+            }
+            disp_binary (1u << i);
+            delay(300);
+            //leds(1u << i);                         <---- Descomentar cuando se use en la Raspberry
+            //delayMillis(300);
+        }
     }
+    disp_binary(0x00);
+    //leds(0x00); // Descomentar cuando se use en la Raspberry;
 }
 
 void secuencia_choque(void)
 {
+     int ch;
+    while ((ch = getch()) == ERR) {
     /* Patrón simétrico: dos luces se acercan, chocan y se alejan */
-    uint8_t tabla[8] = {0x81, 0x42, 0x24, 0x18,
-                        0x18, 0x24, 0x42, 0x81};
+        uint8_t tabla[8] = {0x81, 0x42, 0x24, 0x18,
+                            0x18, 0x24, 0x42, 0x81};
 
-    for (size_t i = 0; i < 8; ++i)
-    {
-        disp_binary(tabla[i]); /* sustitúyelo por salida a pines */
-        delay(RETARDO_DEF);
+        for (size_t i = 0; i < 8; ++i)
+        {
+            disp_binary(tabla[i]); 
+            delay(300);
+            //leds(tabla[i]);       
+            //delayMillis(300); 
+        }
     }
+    disp_binary(0x00);
+    //leds(0x00); // Descomentar cuando se use en la Raspberry
 }
 
 void secuencia_prop_alg(void)
 {
+     int ch;
+    while ((ch = getch()) == ERR) {
         /* Parpadeo alternado pares↔impares 5 veces */
-    for (int n = 0; n < 5; ++n) {
-        //leds(0xAA); /* 10101010 */
-       //delayMillis(150);
-       disp_binary(0xAA);
-        delay(RETARDO_DEF);
-        //leds(0x55); /* 01010101 */
-        //delayMillis(150);
-        disp_binary(0x55);
-        delay(RETARDO_DEF);
+        for (int n = 0; n < 5; ++n) {
+            //leds(0xAA); /* 10101010 */
+            //delayMillis(150);
+            disp_binary(0xAA);
+            delay(300);
+            //leds(0x55); /* 01010101 */
+            //delayMillis(150);
+            disp_binary(0x55);
+            delay(300);
+        }
     }
-    disp_binary(0x00); // todos apagados
-    //leds(0x00);
+        disp_binary(0x00);
+        //leds(0x00);
 }
 
 void secuencia_tabla(void)
 {
+     int ch;
+    while ((ch = getch()) == ERR) {
         // Onda desplazada
-    uint8_t tabla[] = {0x11, 0x22, 0x44, 0x88,
+        uint8_t tabla[] = {0x11, 0x22, 0x44, 0x88,
                        0x44, 0x22};
-    for (size_t i = 0; i < sizeof(tabla); ++i) {
-        //leds(tabla[i]);
-        //delayMillis(120);
-        disp_binary(tabla[i]);
-        delay(RETARDO_DEF);
+        for (size_t i = 0; i < sizeof(tabla); ++i) {
+            //leds(tabla[i]);
+            //delayMillis(300);
+            disp_binary(tabla[i]);
+            delay(300);
+        }
     }
     disp_binary(0x00); // todos apagados
     //leds(0x00);
@@ -210,7 +257,7 @@ int leer_password(char *buffer, size_t len)
         if (ch == '\n' || ch == '\r')   // Enter → fin de lectura
             break;
 
-        /* Backspace */
+        // Backspace 
         if ((ch == 0x7F || ch == 0x08) && i > 0) {
             --i;
             printf("\b \b");           // borra un '*'
@@ -218,7 +265,7 @@ int leer_password(char *buffer, size_t len)
             continue;
         }
 
-        /* Solo guarda hasta len caracteres; extra quedarán descartados */
+        // Solo guarda hasta len caracteres; extra quedarán descartados 
         if (i < (int)len) {
             buffer[i++] = (char)ch;
             putchar('*');              // muestra el asterisco
@@ -229,8 +276,8 @@ int leer_password(char *buffer, size_t len)
     putchar('\n');
 
     system("stty echo icanon");        // restaura la terminal
-    return i;                          // devuelve cuántos dígitos guardó
-}
+   return i;                          // devuelve cuántos dígitos guardó
+} 
 
 /* void leds(uint8_t value)
 {
@@ -239,12 +286,7 @@ int leer_password(char *buffer, size_t len)
         int bit = (value & (1 << (7 - i))) != 0; // MSB primero 
         digitalWrite(led_pins[i], bit ? HIGH : LOW);
     }
-}
-
-void delayMillis(unsigned int ms)
-{                                                                   <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
-    delayMillis(ms); // wrapper directo a EasyPIO
-} */
+}*/
 
 void disp_binary(uint8_t v)
 {
