@@ -297,17 +297,3 @@ int leer_password(char *buffer, size_t len)
         digitalWrite(led_pins[i], bit ? HIGH : LOW);
     }
 }*/
-
-void disp_binary(uint8_t v)
-{
-    /* Imprime los 8 bits MSB→LSB */
-    for (int b = 7; b >= 0; --b)
-        putchar((v & (1u << b)) ? '*' : '_');
-    putchar('\n');
-}
-
-void delay(volatile uint32_t ticks)
-{
-    const useconds_t us = ticks * 0x100;
-    usleep(us);
-}
