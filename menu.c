@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <unistd.h>
-
+#include <ncurses.h>
 #include <stdlib.h>
 
 // #include "EasyPIO.h"          <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
@@ -11,7 +11,6 @@
 #define MAX_PASSWORD 5
 #define RETARDO_DEF 0x1500
 
-/* Prototipos de funciones en C */
 void mostrar_menu(void);
 void ejecutar_opcion(int op);
 
@@ -22,11 +21,9 @@ void secuencia_choque(void);
 void secuencia_prop_alg(void);
 void secuencia_tabla(void);
 
-/* Prototipos de funciones en ARM assembly */
-extern void disp_binary(uint8_t value);    // Función implementada en funciones_arm.txt
-extern void delay(volatile uint32_t ticks); // Función implementada en funciones_arm.txt
-
 /* utilitarios */
+void disp_binary(uint8_t value);
+void delay(volatile uint32_t ticks);
 int leer_password(char *buffer, size_t max_len);
 
 int main(void)
@@ -35,7 +32,7 @@ int main(void)
 
     initscr();             // arranca ncurses
     cbreak();              // un solo carácter a la vez
-    noecho();              // no "eco" de teclas
+    noecho();              // no “eco” de teclas
     nodelay(stdscr, TRUE); // getch() no bloquea
 
     /* 1. Autenticación  */
@@ -300,3 +297,17 @@ int leer_password(char *buffer, size_t len)
         digitalWrite(led_pins[i], bit ? HIGH : LOW);
     }
 }*/
+
+void disp_binary(uint8_t v)
+{
+    /* Imprime los 8 bits MSB→LSB */
+    for (int b = 7; b >= 0; --b)
+        putchar((v & (1u << b)) ? '*' : '_');
+    putchar('\n');
+}
+
+void delay(volatile uint32_t ticks)
+{
+    const useconds_t us = ticks * 0x100;
+    usleep(us);
+}
