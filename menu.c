@@ -25,6 +25,10 @@ void secuencia_tabla(void);
 void disp_binary(uint8_t value);
 void delay(volatile uint32_t ticks);
 int leer_password(char *buffer, size_t max_len);
+bool revisar_entrada(int ch);
+
+uint32_t delay_ticks = 300; // Velocidad inicial de la secuencia
+
 
 int main(void)
 {
@@ -154,33 +158,36 @@ void ejecutar_opcion(int op)
 /* SECUENCIAS DE LUCES */
 void secuencia_auto_fantastico(void)
 {
+    printf("Presione 'u' para aumentar la velocidad y 'd' para disminuirla");
     int ch;
     while (1)
     {
         for (int i = 0; i < 8; ++i)
         {
-            if ((ch = getch()) != ERR)
+            ch = getch();
+            if (revisar_entrada(ch))
             {
                 disp_binary(0x00); // apaga
                 // leds(0x00); // Descomentar cuando se use en la Raspberry
                 return; // sale de la secuencia
             }
             disp_binary(1u << i);
-            delay(300);
+            delay(delay_ticks);
             // leds(1u << i);                         <---- Descomentar cuando se use en la Raspberry
             // delayMillis(300);
         }
 
         for (int i = 6; i > 0; --i)
         {
-            if ((ch = getch()) != ERR)
+            ch = getch();
+            if (revisar_entrada(ch))
             {
                 disp_binary(0x00); // apaga
                 // leds(0x00); // Descomentar cuando se use en la Raspberry
                 return; // sale de la secuencia
             }
             disp_binary(1u << i);
-            delay(300);
+            delay(delay_ticks);
             // leds(1u << i);                         <---- Descomentar cuando se use en la Raspberry
             // delayMillis(300);
         }
@@ -191,41 +198,73 @@ void secuencia_auto_fantastico(void)
 
 void secuencia_choque(void)
 {
+    printf("Presione 'u' para aumentar la velocidad y 'd' para disminuirla");
     int ch;
-    while ((ch = getch()) == ERR)
+    while (1)
     {
+        ch = getch();
+        if(revisar_entrada(ch)){
+            disp_binary(0x00);
+            //leds(0x00)
+            return;
+        }
         /* Patrón simétrico: dos luces se acercan, chocan y se alejan */
         uint8_t tabla[8] = {0x81, 0x42, 0x24, 0x18,
                             0x18, 0x24, 0x42, 0x81};
 
         for (size_t i = 0; i < 8; ++i)
         {
-            disp_binary(tabla[i]);
-            delay(300);
-            // leds(tabla[i]);
-            // delayMillis(300);
+            ch = getch();
+            if (revisar_entrada(ch)){
+            disp_binary(0x00);
+            // leds(0x00);
+            return;
+        }
+        disp_binary(tabla[i]);
+        //leds(tabla[i]);
+        delay(delay_ticks);
+        //delayMillis(delay_ticks);
         }
     }
-    disp_binary(0x00);
-    // leds(0x00); // Descomentar cuando se use en la Raspberry
 }
 
 void secuencia_prop_alg(void)
 {
+    printf("Presione 'u' para aumentar la velocidad y 'd' para disminuirla");
     int ch;
-    while ((ch = getch()) == ERR)
+    while (1)
     {
+        ch = getch();
+        if (revisar_entrada(ch)){
+            disp_binary(0x00);
+            // leds(0x00);
+            return;
+        }
         /* Parpadeo alternado pares↔impares 5 veces */
         for (int n = 0; n < 5; ++n)
         {
-            // leds(0xAA); /* 10101010 */
-            // delayMillis(150);
+            ch = getch();
+            if (revisar_entrada(ch)){
+                disp_binary(0x00);
+                // leds(0x00);
+                return;
+            }
+            
             disp_binary(0xAA);
-            delay(300);
-            // leds(0x55); /* 01010101 */
-            // delayMillis(150);
+            // leds(0xAA);
+            delay(delay_ticks);
+            // delayMillis(delay_ticks);
+            
+            ch = getch();
+            if (revisar_entrada(ch)){
+                disp_binary(0x00);
+                // leds(0x00);
+                return;
+            }
             disp_binary(0x55);
-            delay(300);
+            // leds(0x55);
+            delay(delay_ticks);
+            // delayMillis(delay_ticks);
         }
     }
     disp_binary(0x00);
@@ -234,18 +273,26 @@ void secuencia_prop_alg(void)
 
 void secuencia_tabla(void)
 {
+    printf("Presione 'u' para aumentar la velocidad y 'd' para disminuirla");
     int ch;
-    while ((ch = getch()) == ERR)
+    while (1)
     {
         // Onda desplazada
         uint8_t tabla[] = {0x11, 0x22, 0x44, 0x88,
                            0x44, 0x22};
         for (size_t i = 0; i < sizeof(tabla); ++i)
         {
+            ch = getch();
+            if (revisar_entrada(ch)){
+                disp_binary(0x00);
+                // leds(0x00);
+                return;
+            }
+            
             // leds(tabla[i]);
-            // delayMillis(300);
+            // delayMillis(delay_ticks);
             disp_binary(tabla[i]);
-            delay(300);
+            delay(delay_ticks);
         }
     }
     disp_binary(0x00); // todos apagados
@@ -289,6 +336,23 @@ int leer_password(char *buffer, size_t len)
     return i;                   // devuelve cuántos dígitos guardó
 }
 
+bool revisar_entrada(int ch)
+{
+    if (ch == 'u' || ch == 'U') {
+        if (delay_ticks > 10) delay_ticks -= 50;
+        return false;
+    }
+    else if (ch == 'd' || ch == 'D') {
+        if (delay_ticks < 1000) delay_ticks += 50;
+        return false;
+    }
+    else if (ch != ERR) {
+        return true; // cualquier otra tecla: salir
+    }
+    return false;
+}
+
+
 /* void leds(uint8_t value)
 {
     // Enciende LEDs según bit (MSB→LED0)                           <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
@@ -297,3 +361,17 @@ int leer_password(char *buffer, size_t len)
         digitalWrite(led_pins[i], bit ? HIGH : LOW);
     }
 }*/
+
+void disp_binary(uint8_t v)
+{
+    /* Imprime los 8 bits MSB→LSB */
+    for (int b = 7; b >= 0; --b)
+        putchar((v & (1u << b)) ? '*' : '_');
+    putchar('\n');
+}
+
+void delay(volatile uint32_t ticks)
+{
+    const useconds_t us = ticks * 0x100;
+    usleep(us);
+}
