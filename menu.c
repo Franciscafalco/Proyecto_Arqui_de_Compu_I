@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "funciones_arm.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -6,7 +7,15 @@
 #include <ncurses.h>
 #include <stdlib.h>
 
-// #include "EasyPIO.h"          <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
+#include "EasyPIO.h"         // <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
+
+/*-----niveles lógicos para EasyPIO------*/
+#ifndef HIGH
+#define HIGH 1
+#endif 
+#ifndef LOW
+#define LOW 0
+#endif
 
 #define MAX_PASSWORD 5
 #define RETARDO_DEF 0x1500
@@ -24,16 +33,20 @@ void secuencia_tabla(void);
 /* utilitarios */
 void disp_binary(uint8_t value);
 void delay(volatile uint32_t ticks);
+void leds(uint8_t value);
 int leer_password(char *buffer, size_t max_len);
 bool revisar_entrada(int ch);
+void leds_init(void);
 
 uint32_t delay_ticks = 300; // Velocidad inicial de la secuencia
 
+const int led_pins[8] = {26, 19, 13, 6, 5, 0, 11, 9} ;
 
 int main(void)
 {
-    // pioInit();
+    pioInit();             // Descomentar cuando se use en la Raspberry
 
+    leds_init();           // Descomentar cuando se use en la Raspberry
     initscr();             // arranca ncurses
     cbreak();              // un solo carácter a la vez
     noecho();              // no “eco” de teclas
@@ -168,13 +181,13 @@ void secuencia_auto_fantastico(void)
             if (revisar_entrada(ch))
             {
                 disp_binary(0x00); // apaga
-                // leds(0x00); // Descomentar cuando se use en la Raspberry
+                leds(0x00); // Descomentar cuando se use en la Raspberry
                 return; // sale de la secuencia
             }
             disp_binary(1u << i);
             delay(delay_ticks);
-            // leds(1u << i);                         <---- Descomentar cuando se use en la Raspberry
-            // delayMillis(300);
+            leds(1u << i);                         //<---- Descomentar cuando se use en la Raspberry
+            delayMillis(300);
         }
 
         for (int i = 6; i > 0; --i)
@@ -183,17 +196,17 @@ void secuencia_auto_fantastico(void)
             if (revisar_entrada(ch))
             {
                 disp_binary(0x00); // apaga
-                // leds(0x00); // Descomentar cuando se use en la Raspberry
+                leds(0x00); // Descomentar cuando se use en la Raspberry
                 return; // sale de la secuencia
             }
             disp_binary(1u << i);
             delay(delay_ticks);
-            // leds(1u << i);                         <---- Descomentar cuando se use en la Raspberry
-            // delayMillis(300);
+            leds(1u << i);                       //  <---- Descomentar cuando se use en la Raspberry
+            delayMillis(300);
         }
     }
     disp_binary(0x00);
-    // leds(0x00); // Descomentar cuando se use en la Raspberry;
+    leds(0x00); // Descomentar cuando se use en la Raspberry;
 }
 
 void secuencia_choque(void)
@@ -205,7 +218,7 @@ void secuencia_choque(void)
         ch = getch();
         if(revisar_entrada(ch)){
             disp_binary(0x00);
-            //leds(0x00)
+            leds(0x00);
             return;
         }
         /* Patrón simétrico: dos luces se acercan, chocan y se alejan */
@@ -217,87 +230,17 @@ void secuencia_choque(void)
             ch = getch();
             if (revisar_entrada(ch)){
             disp_binary(0x00);
-            // leds(0x00);
+             leds(0x00);
             return;
         }
         disp_binary(tabla[i]);
-        //leds(tabla[i]);
+        leds(tabla[i]);
         delay(delay_ticks);
-        //delayMillis(delay_ticks);
+        delayMillis(delay_ticks);
         }
     }
 }
 
-void secuencia_prop_alg(void)
-{
-    printf("Presione 'u' para aumentar la velocidad y 'd' para disminuirla");
-    int ch;
-    while (1)
-    {
-        ch = getch();
-        if (revisar_entrada(ch)){
-            disp_binary(0x00);
-            // leds(0x00);
-            return;
-        }
-        /* Parpadeo alternado pares↔impares 5 veces */
-        for (int n = 0; n < 5; ++n)
-        {
-            ch = getch();
-            if (revisar_entrada(ch)){
-                disp_binary(0x00);
-                // leds(0x00);
-                return;
-            }
-            
-            disp_binary(0xAA);
-            // leds(0xAA);
-            delay(delay_ticks);
-            // delayMillis(delay_ticks);
-            
-            ch = getch();
-            if (revisar_entrada(ch)){
-                disp_binary(0x00);
-                // leds(0x00);
-                return;
-            }
-            disp_binary(0x55);
-            // leds(0x55);
-            delay(delay_ticks);
-            // delayMillis(delay_ticks);
-        }
-    }
-    disp_binary(0x00);
-    // leds(0x00);
-}
-
-void secuencia_tabla(void)
-{
-    printf("Presione 'u' para aumentar la velocidad y 'd' para disminuirla");
-    int ch;
-    while (1)
-    {
-        // Onda desplazada
-        uint8_t tabla[] = {0x11, 0x22, 0x44, 0x88,
-                           0x44, 0x22};
-        for (size_t i = 0; i < sizeof(tabla); ++i)
-        {
-            ch = getch();
-            if (revisar_entrada(ch)){
-                disp_binary(0x00);
-                // leds(0x00);
-                return;
-            }
-            
-            // leds(tabla[i]);
-            // delayMillis(delay_ticks);
-            disp_binary(tabla[i]);
-            delay(delay_ticks);
-        }
-    }
-    disp_binary(0x00); // todos apagados
-    // leds(0x00);
-}
 
 /* ====================== UTILITARIOS ====================== */
 
@@ -353,25 +296,19 @@ bool revisar_entrada(int ch)
 }
 
 
-/* void leds(uint8_t value)
+ void leds(uint8_t value)
 {
-    // Enciende LEDs según bit (MSB→LED0)                           <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
+    // Enciende LEDs según bit (MSB→LED0)                           //<----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
     for (int i = 0; i < 8; ++i) {
         int bit = (value & (1 << (7 - i))) != 0; // MSB primero
         digitalWrite(led_pins[i], bit ? HIGH : LOW);
     }
-}*/
-
-void disp_binary(uint8_t v)
-{
-    /* Imprime los 8 bits MSB→LSB */
-    for (int b = 7; b >= 0; --b)
-        putchar((v & (1u << b)) ? '*' : '_');
-    putchar('\n');
 }
 
-void delay(volatile uint32_t ticks)
-{
-    const useconds_t us = ticks * 0x100;
-    usleep(us);
+void leds_init(void){
+    pioInit(); // Descomentar cuando se use en la Raspberry
+    for(int i = 0; i < 8; ++i) {
+        pinMode(led_pins[i], OUTPUT); // Configura pines como salida
+        digitalWrite(led_pins[i], LOW); // Apaga todos los LEDs
+    }
 }
