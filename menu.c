@@ -7,12 +7,12 @@
 #include <ncurses.h>
 #include <stdlib.h>
 
-#include "EasyPIO.h"         // <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
+#include "EasyPIO.h" // <----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
 
 /*-----niveles lógicos para EasyPIO------*/
 #ifndef HIGH
 #define HIGH 1
-#endif 
+#endif
 #ifndef LOW
 #define LOW 0
 #endif
@@ -40,11 +40,11 @@ void leds_init(void);
 
 uint32_t delay_ticks = 300; // Velocidad inicial de la secuencia
 
-const int led_pins[8] = {26, 19, 13, 6, 5, 0, 11, 9} ;
+const int led_pins[8] = {14, 15, 18, 23, 24, 25, 8, 7};
 
 int main(void)
 {
-    pioInit();             // Descomentar cuando se use en la Raspberry
+    pioInit(); // Descomentar cuando se use en la Raspberry
 
     leds_init();           // Descomentar cuando se use en la Raspberry
     initscr();             // arranca ncurses
@@ -181,12 +181,12 @@ void secuencia_auto_fantastico(void)
             if (revisar_entrada(ch))
             {
                 disp_binary(0x00); // apaga
-                leds(0x00); // Descomentar cuando se use en la Raspberry
-                return; // sale de la secuencia
+                leds(0x00);        // Descomentar cuando se use en la Raspberry
+                return;            // sale de la secuencia
             }
             disp_binary(1u << i);
             delay(delay_ticks);
-            leds(1u << i);                         //<---- Descomentar cuando se use en la Raspberry
+            leds(1u << i); //<---- Descomentar cuando se use en la Raspberry
             delayMillis(300);
         }
 
@@ -196,12 +196,12 @@ void secuencia_auto_fantastico(void)
             if (revisar_entrada(ch))
             {
                 disp_binary(0x00); // apaga
-                leds(0x00); // Descomentar cuando se use en la Raspberry
-                return; // sale de la secuencia
+                leds(0x00);        // Descomentar cuando se use en la Raspberry
+                return;            // sale de la secuencia
             }
             disp_binary(1u << i);
             delay(delay_ticks);
-            leds(1u << i);                       //  <---- Descomentar cuando se use en la Raspberry
+            leds(1u << i); //  <---- Descomentar cuando se use en la Raspberry
             delayMillis(300);
         }
     }
@@ -216,7 +216,8 @@ void secuencia_choque(void)
     while (1)
     {
         ch = getch();
-        if(revisar_entrada(ch)){
+        if (revisar_entrada(ch))
+        {
             disp_binary(0x00);
             leds(0x00);
             return;
@@ -228,19 +229,19 @@ void secuencia_choque(void)
         for (size_t i = 0; i < 8; ++i)
         {
             ch = getch();
-            if (revisar_entrada(ch)){
-            disp_binary(0x00);
-             leds(0x00);
-            return;
-        }
-        disp_binary(tabla[i]);
-        leds(tabla[i]);
-        delay(delay_ticks);
-        delayMillis(delay_ticks);
+            if (revisar_entrada(ch))
+            {
+                disp_binary(0x00);
+                leds(0x00);
+                return;
+            }
+            disp_binary(tabla[i]);
+            leds(tabla[i]);
+            delay(delay_ticks);
+            delayMillis(delay_ticks);
         }
     }
 }
-
 
 /* ====================== UTILITARIOS ====================== */
 
@@ -281,34 +282,40 @@ int leer_password(char *buffer, size_t len)
 
 bool revisar_entrada(int ch)
 {
-    if (ch == 'u' || ch == 'U') {
-        if (delay_ticks > 10) delay_ticks -= 50;
+    if (ch == 'u' || ch == 'U')
+    {
+        if (delay_ticks > 10)
+            delay_ticks -= 50;
         return false;
     }
-    else if (ch == 'd' || ch == 'D') {
-        if (delay_ticks < 1000) delay_ticks += 50;
+    else if (ch == 'd' || ch == 'D')
+    {
+        if (delay_ticks < 1000)
+            delay_ticks += 50;
         return false;
     }
-    else if (ch != ERR) {
+    else if (ch != ERR)
+    {
         return true; // cualquier otra tecla: salir
     }
     return false;
 }
 
-
- void leds(uint8_t value)
+void leds(uint8_t value)
 {
-    // Enciende LEDs según bit (MSB→LED0)                           //<----DESCOMENTAR CUANDO SE USE EN LA RASPBERRY
-    for (int i = 0; i < 8; ++i) {
-        int bit = (value & (1 << (7 - i))) != 0; // MSB primero
+    for (int i = 0; i < 8; ++i)
+    {
+        int bit = (value >> i) & 0x01; // extrae bit i (LSB a MSB)
         digitalWrite(led_pins[i], bit ? HIGH : LOW);
     }
 }
 
-void leds_init(void){
+void leds_init(void)
+{
     pioInit(); // Descomentar cuando se use en la Raspberry
-    for(int i = 0; i < 8; ++i) {
-        pinMode(led_pins[i], OUTPUT); // Configura pines como salida
+    for (int i = 0; i < 8; ++i)
+    {
+        pinMode(led_pins[i], OUTPUT);   // Configura pines como salida
         digitalWrite(led_pins[i], LOW); // Apaga todos los LEDs
     }
 }
