@@ -137,7 +137,7 @@ secuencia_tabla:
     STR     lr, [sp, #8]
 
     LDR     r4, =tabla
-    MOV     r5, #6
+    MOV     r5, #8
 
 tab_loop:
     BL      getch
@@ -154,7 +154,7 @@ tab_loop:
     BNE     tab_loop
 
     LDR     r4, =tabla          @ reinicia tabla
-    MOV     r5, #6
+    MOV     r5, #8
     B       tab_loop
 
 tab_exit:
@@ -169,4 +169,4 @@ tab_exit:
 
 /* ───────────────────── Tabla de patrones ─────────────────────── */
 tabla:
-    .byte 0x11, 0x22, 0x44, 0x88, 0x44, 0x22
+    .byte 0x11, 0x22, 0x44, 0x88, 0x88, 0x44, 0x22, 0x11
